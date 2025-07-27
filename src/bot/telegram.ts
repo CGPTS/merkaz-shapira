@@ -3,7 +3,7 @@ import { User, SessionData } from '../types/types';
 import { logger, logTelegramEvent, logUserAction, logError } from '../utils/logger';
 import { config } from '../config/config';
 import { database } from '../database/database';
-import { whatsappClient } from '../whatsapp/client';
+import { whatsappClient, WhatsAppClient } from '../whatsapp/client';
 
 interface BotContext extends Context {
   session?: SessionData;
@@ -241,6 +241,59 @@ ${!whatsappStatus.isConnected ? '\n⚠️ יש להתחבר לוואטסאפ ת�
       await this.disconnectWhatsApp(ctx);
       await ctx.answerCbQuery();
     });
+
+    // Group management callbacks
+    this.bot.action('add_group', async (ctx) => {
+      ctx.session!.step = 'add_group_id';
+      await ctx.editMessageText(
+        '➕ *הוספת קבוצה חדשה*\n\nהזן את ID הקבוצה בוואטסאפ (לדוגמה: 120363025246125708@g.us):',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard([
+            [Markup.button.callback('◀️ חזור', 'manage_groups')]
+          ])
+        }
+      );
+      await ctx.answerCbQuery();
+    });
+
+    this.bot.action('refresh_groups', async (ctx) => {
+      await this.showGroupsManagement(ctx);
+      await ctx.answerCbQuery();
+    });
+
+    this.bot.action('delete_group', async (ctx) => {
+      await this.showGroupDeletion(ctx);
+      await ctx.answerCbQuery();
+    });
+
+    // Send to all groups callback
+    this.bot.action('send_to_all', async (ctx) => {
+      if (ctx.session?.tempData?.message) {
+        await this.sendRideToAllGroups(ctx, ctx.session.tempData.message);
+      }
+      await ctx.answerCbQuery();
+    });
+
+    // Select specific group callbacks
+    this.bot.action(/^select_group_(\d+)$/, async (ctx) => {
+      const groupId = parseInt(ctx.match![1]!);
+      await this.selectGroupForRide(ctx, groupId);
+      await ctx.answerCbQuery();
+    });
+
+    // Confirm clean chats callback
+    this.bot.action('confirm_clean', async (ctx) => {
+      await this.cleanAllChats(ctx);
+      await ctx.answerCbQuery();
+    });
+
+    // Delete specific group callbacks
+    this.bot.action(/^delete_group_(\d+)$/, async (ctx) => {
+      const groupId = parseInt(ctx.match![1]!);
+      await this.deleteGroup(ctx, groupId);
+      await ctx.answerCbQuery();
+    });
   }
 
   private getMainMenuMarkup() {
@@ -266,6 +319,9 @@ ${!whatsappStatus.isConnected ? '\n⚠️ יש להתחבר לוואטסאפ ת�
         break;
       case 'change_send_rate':
         await this.handleSendRateChange(ctx, text);
+        break;
+      case 'add_group_id':
+        await this.handleAddGroup(ctx, text);
         break;
       default:
         ctx.session.step = undefined;
@@ -444,6 +500,290 @@ ${!whatsappStatus.isConnected ? '\n⚠️ יש להתחבר לוואטסאפ ת�
       logError('Error disconnecting WhatsApp', error);
       await ctx.editMessageText(
         '❌ שגיאה בהתנתקות מוואטסאפ.',
+        this.getMainMenuMarkup()
+      );
+    }
+  }
+
+  private async handleAddGroup(ctx: BotContext, groupId: string): Promise<void> {
+    try {
+      // Validate group ID format
+      if (!WhatsAppClient.isValidChatId(groupId)) {
+        await ctx.reply(
+          '❌ ID קבוצה לא תקין!\n\nהפורמט הצריך: 120363025246125708@g.us',
+          Markup.inlineKeyboard([
+            [Markup.button.callback('🔄 נסה שוב', 'add_group')],
+            [Markup.button.callback('◀️ חזור', 'manage_groups')]
+          ])
+        );
+        return;
+      }
+
+      // Try to get group info from WhatsApp
+      const chat = await whatsappClient.getChatById(groupId);
+      if (!chat) {
+        await ctx.reply(
+          '❌ קבוצה לא נמצאה בוואטסאפ!\n\nוודא שהבוט חבר לקבוצה וש-ID נכון.',
+          Markup.inlineKeyboard([
+            [Markup.button.callback('🔄 נסה שוב', 'add_group')],
+            [Markup.button.callback('◀️ חזור', 'manage_groups')]
+          ])
+        );
+        return;
+      }
+
+      // Save group to database
+      await database.createChatGroup({
+        name: chat.name || 'קבוצה ללא שם',
+        whatsappGroupId: groupId,
+        createdBy: ctx.session!.userId,
+        isActive: true
+      });
+
+      await ctx.reply(
+        `✅ הקבוצה "${chat.name}" נוספה בהצלחה!`,
+        this.getMainMenuMarkup()
+      );
+
+      ctx.session!.step = undefined;
+      logUserAction(ctx.from!.id, 'Added group', { groupId, groupName: chat.name });
+
+    } catch (error) {
+      logError('Error adding group', error);
+      await ctx.reply(
+        '❌ שגיאה בהוספת הקבוצה. נסה שוב.',
+        Markup.inlineKeyboard([
+          [Markup.button.callback('🔄 נסה שוב', 'add_group')],
+          [Markup.button.callback('◀️ חזור', 'manage_groups')]
+        ])
+      );
+    }
+  }
+
+  private async showGroupDeletion(ctx: BotContext): Promise<void> {
+    try {
+      const groups = await database.getChatGroupsByUser(ctx.session!.userId);
+      
+      if (groups.length === 0) {
+        await ctx.editMessageText(
+          '❌ אין קבוצות למחיקה.',
+          Markup.inlineKeyboard([
+            [Markup.button.callback('◀️ חזור', 'manage_groups')]
+          ])
+        );
+        return;
+      }
+
+      const keyboard = groups.map(group => 
+        [Markup.button.callback(`❌ ${group.name}`, `delete_group_${group.id}`)]
+      );
+      keyboard.push([Markup.button.callback('◀️ חזור', 'manage_groups')]);
+
+      await ctx.editMessageText(
+        '❌ *מחיקת קבוצה*\n\nבחר קבוצה למחיקה:',
+        {
+          parse_mode: 'Markdown',
+          ...Markup.inlineKeyboard(keyboard)
+        }
+      );
+      
+    } catch (error) {
+      logError('Error showing group deletion', error);
+      await ctx.editMessageText(
+        '❌ שגיאה בטעינת הקבוצות.',
+        this.getMainMenuMarkup()
+      );
+    }
+  }
+
+  private async sendRideToAllGroups(ctx: BotContext, message: string): Promise<void> {
+    try {
+      const groups = await database.getChatGroupsByUser(ctx.session!.userId);
+      
+      if (groups.length === 0) {
+        await ctx.editMessageText(
+          '❌ אין קבוצות זמינות.',
+          this.getMainMenuMarkup()
+        );
+        return;
+      }
+
+      await ctx.editMessageText('🚀 שולח הודעה לכל הקבוצות...');
+
+      let successCount = 0;
+      let failCount = 0;
+      const sendRate = config.getAppConfig().defaultSendRate;
+
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i]!;
+        const delay = i * sendRate; // Add delay between sends
+
+        setTimeout(async () => {
+          const success = await whatsappClient.sendMessage(group.whatsappGroupId, message);
+          if (success) {
+            successCount++;
+            logger.info(`Message sent to group: ${group.name}`);
+          } else {
+            failCount++;
+            logger.warn(`Failed to send message to group: ${group.name}`);
+          }
+
+          // Update status after last message
+          if (i === groups.length - 1) {
+            setTimeout(async () => {
+              await ctx.editMessageText(
+                `✅ שליחה הושלמה!\n\n` +
+                `🟢 נשלח בהצלחה: ${successCount}\n` +
+                `🔴 נכשל: ${failCount}\n` +
+                `📊 סה"כ קבוצות: ${groups.length}`,
+                this.getMainMenuMarkup()
+              );
+            }, 2000);
+          }
+        }, delay);
+      }
+
+      ctx.session!.step = undefined;
+      ctx.session!.tempData = undefined;
+      
+      logUserAction(ctx.from!.id, 'Sent ride to all groups', { 
+        groupCount: groups.length,
+        messageLength: message.length
+      });
+
+    } catch (error) {
+      logError('Error sending ride to all groups', error);
+      await ctx.editMessageText(
+        '❌ שגיאה בשליחת ההודעות.',
+        this.getMainMenuMarkup()
+      );
+    }
+  }
+
+  private async selectGroupForRide(ctx: BotContext, groupId: number): Promise<void> {
+    try {
+      const groups = await database.getChatGroupsByUser(ctx.session!.userId);
+      const selectedGroup = groups.find(g => g.id === groupId);
+      
+      if (!selectedGroup) {
+        await ctx.editMessageText('❌ קבוצה לא נמצאה.', this.getMainMenuMarkup());
+        return;
+      }
+
+      const message = ctx.session!.tempData?.message;
+      if (!message) {
+        await ctx.editMessageText('❌ הודעה לא נמצאה.', this.getMainMenuMarkup());
+        return;
+      }
+
+      await ctx.editMessageText(`🚀 שולח הודעה לקבוצה "${selectedGroup.name}"...`);
+
+      const success = await whatsappClient.sendMessage(selectedGroup.whatsappGroupId, message);
+      
+      if (success) {
+        await ctx.editMessageText(
+          `✅ ההודעה נשלחה בהצלחה לקבוצה "${selectedGroup.name}"!`,
+          this.getMainMenuMarkup()
+        );
+        logUserAction(ctx.from!.id, 'Sent ride to specific group', { 
+          groupId: selectedGroup.id,
+          groupName: selectedGroup.name
+        });
+      } else {
+        await ctx.editMessageText(
+          `❌ שליחת ההודעה לקבוצה "${selectedGroup.name}" נכשלה.`,
+          this.getMainMenuMarkup()
+        );
+      }
+
+      ctx.session!.step = undefined;
+      ctx.session!.tempData = undefined;
+
+    } catch (error) {
+      logError('Error selecting group for ride', error);
+      await ctx.editMessageText(
+        '❌ שגיאה בשליחת ההודעה.',
+        this.getMainMenuMarkup()
+      );
+    }
+  }
+
+  private async cleanAllChats(ctx: BotContext): Promise<void> {
+    try {
+      const groups = await database.getChatGroupsByUser(ctx.session!.userId);
+      
+      if (groups.length === 0) {
+        await ctx.editMessageText(
+          '❌ אין קבוצות לניקוי.',
+          this.getMainMenuMarkup()
+        );
+        return;
+      }
+
+      await ctx.editMessageText('🧹 מנקה צ\'אטים...');
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const group of groups) {
+        const success = await whatsappClient.clearChat(group.whatsappGroupId);
+        if (success) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      }
+
+      await ctx.editMessageText(
+        `✅ ניקוי הושלם!\n\n` +
+        `🟢 נוקו בהצלחה: ${successCount}\n` +
+        `🔴 נכשל: ${failCount}\n` +
+        `📊 סה"כ קבוצות: ${groups.length}`,
+        this.getMainMenuMarkup()
+      );
+
+      logUserAction(ctx.from!.id, 'Cleaned all chats', { 
+        successCount,
+        failCount,
+        totalGroups: groups.length
+      });
+
+    } catch (error) {
+      logError('Error cleaning chats', error);
+      await ctx.editMessageText(
+        '❌ שגיאה בניקוי הצ\'אטים.',
+        this.getMainMenuMarkup()
+      );
+    }
+  }
+
+  private async deleteGroup(ctx: BotContext, groupId: number): Promise<void> {
+    try {
+      const groups = await database.getChatGroupsByUser(ctx.session!.userId);
+      const groupToDelete = groups.find(g => g.id === groupId);
+      
+      if (!groupToDelete) {
+        await ctx.editMessageText('❌ קבוצה לא נמצאה.', this.getMainMenuMarkup());
+        return;
+      }
+
+      // Delete from database (mark as inactive)
+      await database.updateChatGroup(groupId, { isActive: false });
+
+      await ctx.editMessageText(
+        `✅ הקבוצה "${groupToDelete.name}" נמחקה בהצלחה!`,
+        this.getMainMenuMarkup()
+      );
+
+      logUserAction(ctx.from!.id, 'Deleted group', { 
+        groupId,
+        groupName: groupToDelete.name
+      });
+
+    } catch (error) {
+      logError('Error deleting group', error);
+      await ctx.editMessageText(
+        '❌ שגיאה במחיקת הקבוצה.',
         this.getMainMenuMarkup()
       );
     }
