@@ -1,0 +1,1646 @@
+/* ============================================
+   מערכת שריון אולם מרכז שפירא
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Heebo', sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    min-height: 100vh;
+    color: #333;
+    direction: rtl;
+}
+
+/* ===== Progress Bar ===== */
+.progress-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 15px 20px;
+}
+
+.progress-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #4CAF50, #8BC34A);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+    width: 14.28%;
+}
+
+.steps-indicator {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.step-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.step-dot.active {
+    background: #4CAF50;
+    color: white;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+}
+
+.step-dot.completed {
+    background: #8BC34A;
+    color: white;
+}
+
+/* ===== Wizard Container ===== */
+.wizard-container {
+    max-width: 800px;
+    margin: 100px auto 40px;
+    padding: 0 20px;
+}
+
+.step {
+    display: none;
+    animation: fadeInUp 0.5s ease;
+}
+
+.step.active {
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.step-content {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== Typography ===== */
+h1 {
+    font-size: 28px;
+    font-weight: 900;
+    color: #1a1a2e;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+h2 {
+    font-size: 22px;
+    color: #302b63;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+    font-size: 16px;
+}
+
+/* ===== Welcome Step ===== */
+.welcome-icon {
+    text-align: center;
+    font-size: 60px;
+    margin-bottom: 15px;
+}
+
+.welcome-text {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 25px;
+    margin: 20px 0;
+    line-height: 1.8;
+}
+
+.welcome-text h3 {
+    margin: 15px 0 10px;
+    color: #302b63;
+}
+
+.welcome-text ul {
+    list-style: none;
+    padding: 0;
+}
+
+.welcome-text ul li {
+    padding: 5px 0;
+    padding-right: 25px;
+    position: relative;
+}
+
+.welcome-text ul li::before {
+    content: "•";
+    color: #4CAF50;
+    font-weight: bold;
+    position: absolute;
+    right: 5px;
+}
+
+/* ===== Buttons ===== */
+.btn {
+    padding: 14px 40px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+/* כפתור המשך כללי */
+.btn-next {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+}
+/* כפתור המשך בשלב 1 - באמצע */
+#step1 .btn-next {
+    display: block;
+    margin: 30px auto 0;
+}
+
+
+.btn-next:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+}
+
+.btn-back {
+    background: #e0e0e0;
+    color: #555;
+}
+
+.btn-back:hover {
+    background: #d0d0d0;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+    font-size: 18px;
+    padding: 16px 50px;
+}
+
+.btn-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(33, 150, 243, 0.4);
+}
+
+.btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    gap: 15px;
+}
+/* ודא שהכפתורים בגובה שווה */
+.btn-group .btn {
+    padding: 14px 40px; /* גובה אחיד */
+    font-size: 16px;
+    min-height: 50px; /* גובה מינימלי אחיד */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* כפתור חזרה תמיד בצד ימין */
+.btn-group .btn-back {
+    order: 1;
+}
+/* כפתורי המשך/שלח תמיד בצד שמאל */
+.btn-group .btn-next,
+.btn-group .btn-submit {
+    order: 2;
+    margin-left: auto; /* דוחף לצד שמאל */
+}
+/* כפתור submit מיוחד */
+.btn-submit {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+    font-size: 18px;
+    padding: 16px 50px;
+    min-height: 54px; /* קצת יותר גבוה */
+}
+.btn-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(33, 150, 243, 0.4);
+}
+
+.btn-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== Takanon (Step 2) ===== */
+.takanon-images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.takanon-img-wrapper {
+    text-align: center;
+}
+
+.takanon-img {
+    width: 100%;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.takanon-img:hover {
+    transform: scale(1.02);
+}
+
+.takanon-img-wrapper span {
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+    color: #666;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 25px 0;
+    padding: 15px 20px;
+    background: #f0f7f0;
+    border-radius: 12px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.3s ease;
+}
+
+.checkbox-container:hover {
+    border-color: #4CAF50;
+}
+
+.checkbox-container input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    accent-color: #4CAF50;
+    cursor: pointer;
+}
+
+/* ===== Form (Step 3) ===== */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #333;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 15px;
+    transition: border-color 0.3s ease;
+    direction: rtl;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+/* ===== Resident Type (Step 4) - Updated for 2 cards ===== */
+.resident-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* ✅ שנה מ-repeat(3, 1fr) ל-1fr 1fr */
+    gap: 20px; /* ✅ הגדל מ-15px ל-20px */
+    margin-bottom: 25px;
+    max-width: 600px; /* ✅ הוסף רוחב מקסימלי */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.resident-card {
+    background: #f8f9fa;
+    border: 3px solid #e0e0e0;
+    border-radius: 15px;
+    padding: 30px 20px; /* ✅ הגדל מ-25px 15px ל-30px 20px */
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 140px; /* ✅ הוסף גובה מינימלי */
+}
+
+.resident-card:hover {
+    border-color: #4CAF50;
+    transform: translateY(-3px);
+}
+
+.resident-card.selected {
+    border-color: #4CAF50;
+    background: #f0f7f0;
+    box-shadow: 0 5px 20px rgba(76, 175, 80, 0.2);
+}
+
+.resident-icon {
+    font-size: 50px; /* ✅ הגדל מ-40px ל-50px */
+    margin-bottom: 15px; /* ✅ הגדל מ-10px ל-15px */
+}
+
+.resident-card h3 {
+    font-size: 18px; /* ✅ הגדל מ-16px ל-18px */
+    color: #1a1a2e;
+    margin-bottom: 8px; /* ✅ הגדל מ-5px ל-8px */
+    font-weight: 700;
+}
+
+.resident-card p {
+    font-size: 14px; /* ✅ הגדל מ-13px ל-14px */
+    color: #888;
+    line-height: 1.4;
+}
+
+/* ===== Pricing ===== */
+.pricing-section {
+    margin-top: 25px;
+    animation: fadeInUp 0.4s ease;
+}
+
+.pricing-section h3 {
+    margin-bottom: 15px;
+    color: #302b63;
+}
+
+.pricing-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.pricing-card {
+    cursor: pointer;
+}
+
+.pricing-card input[type="radio"] {
+    display: none;
+}
+
+.pricing-content {
+    background: #f8f9fa;
+    border: 3px solid #e0e0e0;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.pricing-card input:checked + .pricing-content {
+    border-color: #4CAF50;
+    background: #f0f7f0;
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.2);
+}
+
+.pricing-title {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.pricing-amount {
+    display: block;
+    font-size: 28px;
+    font-weight: 900;
+    color: #4CAF50;
+}
+
+.community-notice {
+    text-align: center;
+    padding: 25px;
+    background: #f0f7f0;
+    border-radius: 15px;
+}
+
+.free-badge {
+    display: inline-block;
+    background: #4CAF50;
+    color: white;
+    padding: 8px 30px;
+    border-radius: 20px;
+    font-size: 20px;
+    font-weight: 900;
+    margin-bottom: 10px;
+}
+
+/* ===== Calendar (Step 5) ===== */
+.calendar-legend {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-bottom: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.legend-color {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+}
+
+.legend-color.green {
+    background: #4CAF50;
+}
+
+.legend-color.red {
+    background: #f44336;
+}
+
+.legend-color.blue {
+    background: #2196F3;
+}
+
+.calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.btn-calendar-nav {
+    background: #302b63;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Heebo', sans-serif;
+    font-weight: 700;
+    transition: background 0.3s ease;
+}
+
+.btn-calendar-nav:hover {
+    background: #1a1a2e;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-header-day {
+    text-align: center;
+    font-weight: 700;
+    padding: 10px 5px;
+    color: #302b63;
+    font-size: 13px;
+}
+
+.calendar-day {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 8px 5px;
+    text-align: center;
+    min-height: 70px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.calendar-day:hover:not(.empty):not(.past) {
+    transform: scale(1.05);
+}
+
+.calendar-day .greg-date {
+    font-weight: 700;
+    font-size: 16px;
+    color: #333;
+}
+
+.calendar-day .heb-date {
+    font-size: 10px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.calendar-day .day-slots {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.calendar-day .slot-indicator {
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 700;
+}
+
+.slot-indicator.available {
+    background: #4CAF50;
+}
+
+.slot-indicator.booked {
+    background: #f44336;
+}
+
+.calendar-day.empty {
+    background: transparent;
+    cursor: default;
+}
+
+.calendar-day.past {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.calendar-day.selected {
+    background: #e3f2fd;
+    border: 2px solid #2196F3;
+}
+
+/* Slot Modal */
+.slot-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+.slot-modal-content {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.slot-modal-content h3 {
+    margin-bottom: 20px;
+    color: #302b63;
+}
+
+.slot-btn {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    border: 2px solid #4CAF50;
+    background: white;
+    border-radius: 12px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #4CAF50;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.slot-btn:hover {
+    background: #4CAF50;
+    color: white;
+}
+
+.slot-btn.booked {
+    border-color: #f44336;
+    color: #f44336;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.selected-date-display {
+    margin-top: 20px;
+    padding: 15px;
+    background: #e3f2fd;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 700;
+    color: #1976D2;
+    font-size: 16px;
+}
+
+/* ===== Summary (Step 6) ===== */
+.summary-card {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row.total {
+    border-top: 3px solid #302b63;
+    margin-top: 10px;
+    padding-top: 15px;
+    font-size: 20px;
+}
+
+.summary-label {
+    font-weight: 700;
+    color: #555;
+}
+
+.summary-value {
+    color: #1a1a2e;
+    font-weight: 500;
+}
+
+.summary-row.total .summary-value {
+    color: #4CAF50;
+    font-weight: 900;
+}
+
+/* ===== Payment Section ===== */
+.payment-section h3 {
+    color: #302b63;
+    margin-bottom: 15px;
+}
+
+.payment-methods {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.payment-method {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.payment-icon {
+    font-size: 30px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.payment-method p {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+}
+
+.upload-section {
+    margin-top: 25px;
+}
+
+.upload-btn {
+    display: block;
+    padding: 20px;
+    border: 3px dashed #ccc;
+    border-radius: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.upload-btn:hover {
+    border-color: #4CAF50;
+    background: #f0f7f0;
+}
+
+.upload-btn input[type="file"] {
+    display: none;
+}
+
+.upload-btn span {
+    font-size: 18px;
+    font-weight: 700;
+    color: #555;
+}
+
+.upload-preview {
+    margin-top: 15px;
+    padding: 12px;
+    background: #f0f7f0;
+    border-radius: 10px;
+    color: #4CAF50;
+    font-weight: 700;
+}
+
+/* ===== Success (Step 7) ===== */
+.center-content {
+    text-align: center;
+}
+
+.success-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: bounceIn 0.6s ease;
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.success-text {
+    font-size: 18px;
+    color: #555;
+    margin: 10px 0;
+}
+
+.order-number {
+    background: #f0f7f0;
+    display: inline-block;
+    padding: 15px 30px;
+    border-radius: 12px;
+    margin: 20px 0;
+    font-size: 18px;
+    color: #302b63;
+}
+
+/* ===== Image Modal ===== */
+.image-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 300;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.image-modal.show {
+    display: flex;
+}
+
+.image-modal img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 10px;
+}
+
+/* ===== Loading ===== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 400;
+    color: white;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== Responsive - Updated ===== */
+@media (max-width: 768px) {
+    .step-content {
+        padding: 25px 20px;
+    }
+
+    h1 {
+        font-size: 22px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .resident-options {
+        grid-template-columns: 1fr; /* ✅ במובייל - עמודה אחת */
+        max-width: 400px; /* ✅ הגבל רוחב במובייל */
+        gap: 15px;
+    }
+    
+    .resident-card {
+        padding: 25px 15px; /* ✅ פחות padding במובייל */
+        min-height: 120px;
+    }
+
+    .pricing-options {
+        grid-template-columns: 1fr;
+    }
+
+    .takanon-images {
+        grid-template-columns: 1fr;
+    }
+
+    .payment-methods {
+        grid-template-columns: 1fr;
+    }
+
+    .calendar-header-day {
+        font-size: 11px;
+    }
+
+    .calendar-day {
+        min-height: 55px;
+        padding: 5px 2px;
+    }
+
+    .calendar-day .greg-date {
+        font-size: 13px;
+    }
+
+    .calendar-day .heb-date {
+        font-size: 8px;
+    }
+
+    .btn-group {
+        flex-direction: column-reverse;
+    }
+
+    .btn-group .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+/* ===== Payment Details (Updated) ===== */
+.payment-details {
+    font-size: 13px;
+    color: #666;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.payment-number {
+    font-size: 18px;
+    font-weight: 900;
+    color: #302b63;
+    direction: ltr;
+    margin-top: 4px;
+}
+
+.payment-method .payment-details:last-of-type {
+    font-size: 12px;
+    line-height: 1.8;
+    color: #555;
+    text-align: right;
+}
+
+.upload-instructions {
+    text-align: center;
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.receipt-preview-img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 10px;
+    margin-top: 10px;
+    border: 2px solid #4CAF50;
+}
+/* ===== Welcome Page - Updated ===== */
+.welcome-greeting {
+    font-size: 18px;
+    font-weight: 700;
+    color: #302b63;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.info-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.info-section:last-of-type {
+    border-bottom: none;
+}
+
+.info-section h3 {
+    color: #302b63;
+    margin-bottom: 12px;
+    font-size: 17px;
+}
+
+.info-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.info-section ul li {
+    padding: 6px 0;
+    padding-right: 25px;
+    position: relative;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.info-section ul li::before {
+    content: "•";
+    color: #4CAF50;
+    font-weight: bold;
+    position: absolute;
+    right: 5px;
+}
+
+/* Price Table */
+.price-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #f0f7f0;
+    border-radius: 10px;
+    border-right: 4px solid #4CAF50;
+}
+
+.price-row.external {
+    background: #f0f0ff;
+    border-right-color: #302b63;
+}
+
+.price-label {
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+}
+
+.price-value {
+    font-weight: 900;
+    font-size: 18px;
+    color: #4CAF50;
+}
+
+.price-row.external .price-value {
+    color: #302b63;
+}
+
+/* Highlight Box */
+.highlight-box {
+    background: #fff8e1 !important;
+    border: 2px solid #ffc107;
+    border-radius: 12px;
+    padding: 15px 20px !important;
+    margin: 15px 0;
+}
+
+.highlight-box p {
+    margin: 8px 0;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+/* Hall Gallery */
+.hall-gallery {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin: 25px 0;
+}
+
+.hall-img {
+    width: 100%;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    aspect-ratio: 4/3;
+    object-fit: cover;
+}
+
+.hall-img:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+/* Welcome Wish */
+.welcome-wish {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 900;
+    color: #302b63;
+    margin: 20px 0 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hall-gallery {
+        grid-template-columns: 1fr;
+    }
+
+    .price-row {
+        flex-direction: column;
+        text-align: center;
+        gap: 5px;
+    }
+}
+/* ===== Addon Section (Projector) ===== */
+.addon-section {
+    margin-top: 25px;
+    animation: fadeInUp 0.4s ease;
+}
+
+.addon-checkbox {
+    cursor: pointer;
+    display: block;
+}
+
+.addon-checkbox input[type="checkbox"] {
+    display: none;
+}
+
+.addon-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 20px;
+    background: #f8f9fa;
+    border: 3px solid #e0e0e0;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.addon-checkbox input:checked + .addon-content {
+    border-color: #2196F3;
+    background: #e3f2fd;
+    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.2);
+}
+
+.addon-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.addon-icon {
+    font-size: 30px;
+}
+
+.addon-info strong {
+    display: block;
+    font-size: 16px;
+    color: #1a1a2e;
+    margin-bottom: 3px;
+}
+
+.addon-info p {
+    font-size: 13px;
+    color: #888;
+    margin: 0;
+}
+
+.addon-price {
+    font-size: 22px;
+    font-weight: 900;
+    color: #2196F3;
+}
+/* ===== Change Image Button ===== */
+.btn-change-image {
+    display: block;
+    margin: 12px auto 0;
+    padding: 8px 25px;
+    background: white;
+    color: #555;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-change-image:hover {
+    border-color: #2196F3;
+    color: #2196F3;
+    background: #e3f2fd;
+}
+/* ===== Enhanced Coordination Message Styling ===== */
+.coordination-message {
+    padding: 25px;
+    background: linear-gradient(135deg, #fff8e1, #fffde7);
+    border: 2px solid #ff9800;
+    border-radius: 18px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.2);
+}
+
+.date-header {
+    background: #ff9800;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 15px;
+    display: inline-block;
+}
+
+.coordination-content h4 {
+    color: #f57c00;
+    margin-bottom: 12px;
+    font-size: 18px;
+}
+
+.status-message {
+    background: #ffecb3;
+    color: #e65100;
+    padding: 10px 15px;
+    border-radius: 10px;
+    margin: 10px 0;
+    font-weight: 700;
+    border: 1px solid #ffb74d;
+}
+
+.available-options {
+    background: #e8f5e8;
+    color: #2e7d32;
+    padding: 10px 15px;
+    border-radius: 10px;
+    margin: 10px 0;
+    font-weight: 600;
+    border: 1px solid #4caf50;
+}
+
+.coordination-content p {
+    margin: 12px 0;
+    color: #555;
+    line-height: 1.6;
+}
+
+.whatsapp-coordination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #25d366;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 50px;
+    border: none;
+    text-decoration: none;
+    font-family: 'Heebo', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    margin: 15px 0 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+}
+
+.whatsapp-coordination-btn:hover {
+    background: #128c7e;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+}
+
+.whatsapp-coordination-btn .whatsapp-icon {
+    font-size: 24px;
+}
+
+.whatsapp-coordination-btn div {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.whatsapp-coordination-btn small {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-top: 2px;
+}
+
+.coordination-note {
+    font-size: 14px;
+    color: #666;
+    font-style: italic;
+    margin-top: 12px;
+    background: #f5f5f5;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .coordination-message {
+        padding: 20px 15px;
+    }
+    
+    .date-header {
+        font-size: 14px;
+        padding: 6px 12px;
+    }
+    
+    .whatsapp-coordination-btn {
+        font-size: 15px;
+        padding: 12px 25px;
+    }
+    
+    .coordination-content h4 {
+        font-size: 16px;
+    }
+    
+    .status-message,
+    .available-options {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+}
+/* ===== Welcome Introduction Styling ===== */
+.welcome-intro {
+    background: linear-gradient(135deg, #f8f9ff, #fff8f8);
+    border: 3px solid #e8eaf6;
+    border-radius: 20px;
+    padding: 30px 25px;
+    margin-bottom: 25px;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(63, 81, 181, 0.1);
+}
+
+.intro-header {
+    margin-bottom: 20px;
+}
+
+.intro-header h3 {
+    font-size: 24px;
+    font-weight: 900;
+    color: #3f51b5;
+    margin: 0;
+    line-height: 1.4;
+    text-shadow: 0 2px 4px rgba(63, 81, 181, 0.1);
+}
+
+.intro-content {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    text-align: right;
+}
+
+.intro-main {
+    background: rgba(255, 255, 255, 0.7);
+    padding: 20px;
+    border-radius: 15px;
+    line-height: 1.8;
+    font-size: 16px;
+    color: #424242;
+    border-right: 4px solid #3f51b5;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+.intro-guidelines {
+    background: #fff3e0;
+    padding: 18px 20px;
+    border-radius: 15px;
+    border: 2px solid #ff9800;
+}
+
+.intro-guidelines p {
+    margin: 8px 0;
+    line-height: 1.7;
+    color: #e65100;
+}
+
+.intro-motto {
+    background: #ffecb3;
+    padding: 12px 15px;
+    border-radius: 10px;
+    margin-top: 12px !important;
+    border-right: 3px solid #ff9800;
+}
+
+.intro-motto strong {
+    color: #e65100;
+    font-size: 15px;
+}
+
+.intro-wishes {
+    background: linear-gradient(135deg, #e8f5e8, #f0fff0);
+    padding: 20px;
+    border-radius: 15px;
+    border: 2px solid #4caf50;
+}
+
+.intro-wishes p {
+    margin: 8px 0;
+    line-height: 1.6;
+    color: #2e7d32;
+    font-size: 16px;
+}
+
+.intro-wishes p:first-child {
+    font-size: 17px;
+}
+
+.intro-wishes strong {
+    color: #1b5e20;
+    font-size: 17px;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 768px) {
+    .welcome-intro {
+        padding: 25px 20px;
+        margin-bottom: 20px;
+    }
+    
+    .intro-header h3 {
+        font-size: 20px;
+        line-height: 1.3;
+    }
+    
+    .intro-main {
+        padding: 16px;
+        font-size: 15px;
+    }
+    
+    .intro-guidelines {
+        padding: 15px 16px;
+    }
+    
+    .intro-wishes {
+        padding: 16px;
+    }
+    
+    .intro-wishes p {
+        font-size: 15px;
+    }
+    
+    .intro-wishes p:first-child {
+        font-size: 16px;
+    }
+    
+    .intro-wishes strong {
+        font-size: 16px;
+    }
+}
+
+/* ===== Enhanced Welcome Greeting ===== */
+.welcome-greeting {
+    font-size: 18px;
+    font-weight: 700;
+    color: #302b63;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    background: #f0f7f0;
+    padding: 15px 20px;
+    border-radius: 12px;
+    border-right: 4px solid #4caf50;
+}
+/* ===== Document Preview Styling - Simplified ===== */
+.document-preview {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.preview-header {
+    text-align: center;
+    margin-bottom: 25px; /* ✅ הגדל מ-20px ל-25px */
+}
+
+.preview-header h3 {
+    color: #302b63;
+    margin-bottom: 8px;
+}
+
+.preview-header p {
+    color: #666;
+    font-size: 16px;
+}
+
+.document-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px; /* ✅ הוסף margin */
+}
+
+.btn-download {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+}
+
+.btn-print {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white;
+}
+
+.step-instructions {
+    margin-bottom: 20px;
+}
+
+.instruction-box {
+    background: #e3f2fd;
+    border: 2px solid #2196F3;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.instruction-box h4 {
+    color: #1976D2;
+    margin-bottom: 12px;
+}
+
+.instruction-box p {
+    margin: 8px 0;
+    color: #555;
+}
+
+/* ===== Responsive - Button Fixes ===== */
+@media (max-width: 768px) {
+    /* שלב 1 נשאר באמצע */
+    #step1 .btn-next {
+        margin: 20px auto 0;
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    /* שאר השלבים - עמודה הפוכה */
+    .btn-group {
+        flex-direction: column-reverse;
+        gap: 10px;
+    }
+
+    .btn-group .btn {
+        width: 100%;
+        text-align: center;
+        margin-left: 0 !important; /* ביטול margin-left במובייל */
+        order: unset; /* ביטול order במובייל */
+    }
+    
+    /* כפתורי מסמכים בעמודה במובייל */
+    .document-actions {
+        flex-direction: column;
+    }
+    
+    .btn-download,
+    .btn-print {
+        width: 100%;
+    }
+}
+/* ===== Document Confirmation Styling ===== */
+.document-confirmation {
+    margin: 25px 0;
+    padding: 20px;
+    background: #fff8e1;
+    border: 2px solid #ffc107;
+    border-radius: 15px;
+}
+
+.document-checkbox {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    gap: 15px;
+}
+
+.document-checkbox .checkmark {
+    min-width: 24px;
+    height: 24px;
+    border: 2px solid #ffc107;
+    border-radius: 6px;
+    background: white;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.document-checkbox input[type="checkbox"]:checked + .checkmark {
+    background: #ffc107;
+    border-color: #ff9800;
+}
+
+.document-checkbox input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 16px;
+    font-weight: 900;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.confirmation-text {
+    color: #e65100;
+    font-size: 16px;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+.confirmation-text strong {
+    color: #bf360c;
+}
+
+/* עדכון כפתור שלב 7 */
+#step7SubmitBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #ccc !important;
+}
+
+#step7SubmitBtn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
